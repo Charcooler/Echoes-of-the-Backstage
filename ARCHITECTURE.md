@@ -21,7 +21,8 @@
 | `ExampleService` | Eksempel, slett senere | — | — |
 | `NoiseService` | Tar imot støy-hendelser, gir dem lydnivå (fra `Config.STANCES`) og posisjon (fra karakteren på serveren). Skriver til Output og sender videre til lyttere via `NoiseService.onNoise(fn)` | Leon | `Config`, `Remotes` |
 | `EntityService` | Det usynlige monsteret: Patrol (mellom patruljepunkter), Investigate og Hunt. Hører støy innenfor `level` studs, har 3D-fottrinn og animasjon for hele kroppen (vaggende gange, lener seg fremover i Hunt, puster og legger hodet på skakke når den lytter), og dreper spillere innenfor `CATCH_RANGE`. Mimicry er ikke bygget | Leon | `Config`, `NoiseService`, `EntityModel` |
-| `EntityService/EntityModel` | Bygger kroppen til «The Stagehand». Bruker AI-meshen fra `Config.ENTITY.MESH` (lastet med `AssetService:CreateMeshPartAsync`). Feiler den, brukes en reservekropp bygget av deler. Alt er sveiset til en ankret `Root`. `setVisible()` viser eller skjuler kroppen | Leon | `Config` |
+| `EntityService/EntityModel` | Bygger kroppen til «The Stagehand». Bruker den riggede AI-meshen fra `Config.ENTITY.MESH` (lastet med `AssetService:CreateMeshPartAsync`) og legger på beinene fra `StagehandRig`. Feiler den, brukes en reservekropp bygget av deler. Alt er sveiset til en ankret `Root`. `setVisible()` viser eller skjuler kroppen | Leon | `Config`, `StagehandRig` |
+| `EntityService/StagehandRig` | Tabell over de 18 beinene i riggen (navn, forelder, CFrame) og `addBones(meshPart)`. Riggen ligger dermed i git som tekst og ikke som en binær modellfil | Leon | — |
 | `DemoRoomService` | Midlertidig testkart laget i kode: mørkt rom, scene, kasser, nødlys og patruljepunkter. Erstattes av et ekte kart | Leon | `Config` |
 
 ## Controllers (klient)
@@ -30,6 +31,7 @@
 | `ExampleController` | Eksempel, slett senere | — | — |
 | `MovementNoiseController` | Stance: C = krype av/på, hold venstre Shift = sprint. Setter `WalkSpeed` og den lokale attributten `Stance` på spilleren, og sender et fottrinn per `STEP_INTERVAL` mens spilleren beveger seg på bakken | Leon | `Config`, `Remotes` |
 | `NoiseHudController` | Debug-HUD nede til venstre: stance, støynivå og taster. Leser attributten `Stance` | Leon | `Config` |
+| `EntityAnimationController` | Animerer monsterets skjelett lokalt på hver klient (`Bone.Transform`): gange med knær og armsving, foroverbøyd sprint i Hunt, pust og hoderykk når det står stille. Leser `Rigged`, `State` og `Moving` på modellen | Leon | `Config` |
 | `StartScreenController` | Tittelskjerm: kamera mot scenen, fløyelsgardiner, tittel og ENTER-knapp. Slår av styring og Roblox-UI til spilleren trykker ENTER, så åpnes gardinene | Leon | `UiTheme` |
 
 ## ReplicatedFirst (klient, kjører før alt annet)
@@ -85,6 +87,10 @@ Monsteret er modellen `Entity` i `workspace`. `Root` er ankret og flyttes med `C
 |---|---|---|---|
 | `EntityPatrolPoint` (`Config.PATROL_POINT_TAG`) | CollectionService-tag | `DemoRoomService` (senere: kartet i Studio) | `EntityService` |
 | `Stance` | Attributt på `LocalPlayer`, bare lokalt | `MovementNoiseController` | `NoiseHudController` (aldri serveren) |
+| `Rigged`, `State`, `Moving` | Attributter på modellen `Entity` | `EntityService`/`EntityModel` | `EntityAnimationController` |
+
+**Monsterets kunst og rigg (`art/stagehand/`, ikke synket av Rojo):**
+`stagehand.gltf` (eksportert fra Studio) → `rig_stagehand.py` i Blender (skjelett, vekter, testbilder i `preview/`) → `stagehand_rigged.glb` → Studio: File → Import 3D. Ved ny rigg må du oppdatere mesh- og tekstur-ID i `Config.ENTITY.MESH` og beintabellen i `StagehandRig` med verdiene fra den importerte modellen.
 
 ## Regler for sikkerhet
 - Serveren stoler aldri på klienten. Alle verdier fra en remote valideres på serveren.

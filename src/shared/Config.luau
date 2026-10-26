@@ -35,12 +35,12 @@ local Config = {
 		CATCH_RANGE = 4, -- studs
 		LINGER_TIME = 3, -- seconds it stands listening where a noise was before patrolling again
 		DEBUG_VISIBLE = true, -- shows the entity's body all the time; set false for the real thing (then it only shows when it catches someone)
-		-- Body mesh made with Roblox's AI mesh generator in Studio. Set to nil to use the primitive body in EntityModel.
+		-- Rigged body mesh: made with Roblox's AI mesh generator, rigged in Blender (art/stagehand) and imported
+		-- with Studio's 3D importer. Its bones live in EntityService/StagehandRig. Set to nil for the primitive body.
 		MESH = {
-			MESH_ID = "rbxassetid://70897007671508",
-			TEXTURE_ID = "rbxassetid://139797303410927",
-			HEIGHT = 9, -- studs; the mesh is scaled to this height
-		} :: { MESH_ID: string, TEXTURE_ID: string, HEIGHT: number }?,
+			MESH_ID = "rbxassetid://74315921560822",
+			TEXTURE_ID = "rbxassetid://137833493602393",
+		} :: { MESH_ID: string, TEXTURE_ID: string }?,
 	},
 	-- CollectionService tag on parts the entity patrols between.
 	PATROL_POINT_TAG = "EntityPatrolPoint",

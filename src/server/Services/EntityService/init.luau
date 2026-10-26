@@ -84,6 +84,9 @@ end
 -- shortcut: the generated mesh has no rig, so the whole body is animated (gait, lean, breathing, twitches);
 -- rig it (Blender or Studio's auto-rig) for real limb animation.
 local function pose(moving: boolean, speed: number): CFrame
+	if model:GetAttribute("Rigged") then
+		return CFrame.identity -- the clients animate the skeleton (EntityAnimationController)
+	end
 	local now = os.clock()
 	if moving then
 		local gait = now * speed * 0.6
@@ -118,6 +121,9 @@ local function step(dt: number)
 	end
 
 	body.CFrame = CFrame.lookAt(groundPosition, groundPosition + facing) * pose(moving, speedFor(state))
+	-- Attributes only replicate when they change, so setting them every frame is cheap.
+	model:SetAttribute("State", state)
+	model:SetAttribute("Moving", moving)
 	footsteps.PlaybackSpeed = if state == "Hunt" then 1.3 elseif state == "Investigate" then 1 else 0.7
 	footsteps.Playing = moving
 end

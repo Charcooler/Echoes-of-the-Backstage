@@ -1,13 +1,14 @@
 --!strict
 -- Builds the entity's body: «The Stagehand», a tall, hunched stagehand with arms that reach the floor,
 -- ropes and a sandbag hanging off it, and a tarnished gramophone horn for a head (sound is all it is).
--- Uses the AI-generated mesh from Config.ENTITY.MESH when it loads; otherwise builds the body from primitives.
+-- Uses the rigged AI-generated mesh from Config.ENTITY.MESH when it loads; otherwise builds the body from primitives.
 -- Every part is welded to an anchored Root, so moving Root.CFrame moves the whole body.
 
 local AssetService = game:GetService("AssetService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local StagehandRig = require(script.Parent.StagehandRig)
 
 local EntityModel = {}
 
@@ -37,7 +38,8 @@ local function weldToRoot(root: BasePart, part: BasePart)
 	weld.Parent = part
 end
 
--- The mesh is stored as asset ids so the model lives in git; returns false (and the caller falls back) if it cannot load.
+-- The mesh is stored as asset ids (plus the bone table in StagehandRig) so the model lives in git.
+-- Returns false, and the caller falls back to primitives, if it cannot load.
 local function addGeneratedMesh(model: Model, root: BasePart): boolean
 	local mesh = Config.ENTITY.MESH
 	if not mesh then
@@ -53,11 +55,12 @@ local function addGeneratedMesh(model: Model, root: BasePart): boolean
 	local part = result :: MeshPart
 	part.Name = "Body"
 	part.TextureID = mesh.TEXTURE_ID
-	part.Size *= mesh.HEIGHT / part.Size.Y
-	-- Stand the mesh on the floor (feet at Y = 0) under Root.
-	part.CFrame = CFrame.new(0, part.Size.Y / 2, 0)
+	-- Feet on the floor (Y = 0) under Root. The imported rig faces +Z, so turn it to face -Z like Root.
+	part.CFrame = CFrame.new(0, part.Size.Y / 2, 0) * CFrame.Angles(0, math.pi, 0)
+	StagehandRig.addBones(part)
 	weldToRoot(root, part)
 	part.Parent = model
+	model:SetAttribute("Rigged", true) -- EntityAnimationController animates the bones on the clients
 	return true
 end
 

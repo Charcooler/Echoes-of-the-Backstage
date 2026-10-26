@@ -28,6 +28,7 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - Lasteskjerm og startskjerm (branch `leon/start-screen`) i art deco-stil: gull på svart, solstråler, røde fløyelsgardiner og lydmåler-søyler. Testet i Studio: lasteskjerm → startskjerm → ENTER åpner gardinene.
 - Monsterets kropp «The Stagehand» (`EntityModel`), med et glimt av kroppen når den tar noen.
 - AI-generert monstermesh (Roblox' mesh-generator i Studio): høy, utmagret skikkelse i frakk med kobbertrakt som hode. Animasjon etter tilstand: gange, lener seg fremover i Hunt, puster og rykker med hodet når den lytter. Utkastene ligger i `ServerStorage.GeneratedMonsterDrafts` i Leons place-fil (ikke i git).
+- Monsteret er rigget i Blender (`art/stagehand/rig_stagehand.py`) og animeres med skjelett: ekte gange med knær og armsving, foroverbøyd jakt, pust og hoderykk. Testet i Studio.
 
 ### Pågår
 - (ingenting ennå)
@@ -40,14 +41,14 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - [ ] Monsteret går i rett linje gjennom props. Bytt til PathfindingService når kartet har flere rom eller etasjer.
 - [ ] Monsterets posisjon replikeres til klientene, så en juksende klient kan finne det. Vurder å skjule det på serveren.
 - [ ] Skru av `Config.ENTITY.DEBUG_VISIBLE` når vi er ferdige med å teste
-- [ ] Rigge monstermeshen (Blender eller Studios auto-rigging) for ekte animasjon av armer og bein
 - [ ] Vurdere om fottrinn bør regnes ut helt på serveren. I dag kan en juksende klient la være å sende `NoiseEvent` og dermed være stille.
 
 ## Beslutninger (nyeste øverst)
 | Dato | Beslutning | Hvorfor |
 |------|-----------|---------|
+| 2026-10-26 | Monsteret rigges med Blender-skript (egne vektregler, ikke automatiske vekter) og animeres med kode på klienten via `Bone.Transform` | De automatiske vektene rev opp frakken. Kodeanimasjon krever ingen opplastede animasjoner, koster ingen nettverkstrafikk og er lett å justere |
+| 2026-10-26 | Riggens bein bygges fra en tabell i `StagehandRig`, ikke fra en `.rbxm` | Alt blir tekst i git, og vi slipper Rojos problemer med MeshParts |
 | 2026-10-26 | Monsterets kropp er en AI-generert mesh, lagret som asset-ID-er i `Config.ENTITY.MESH`. Kroppen av deler er reserve | Ser mye bedre ut. Asset-ID-er i koden gjør at modellen kommer med i git |
-| 2026-10-26 | Meshen har ingen rig, så hele kroppen animeres fra koden (gange, lene seg, pust, hoderykk) | Gir stemning nå. Ekte lemmer krever rigging |
 | 2026-10-26 | Monsteret: «The Stagehand», en høy, lutende scenearbeider med grammofontrakt som hode. Bygget av deler i kode (`EntityModel`) | Lyd er hele identiteten. Kode kommer med i git. Kan byttes mot en modell fra Studio (`.rbxm`) senere |
 | 2026-10-26 | Startskjermen fryser karakteren med `Anchored` lokalt, ikke med `PlayerModule` | Denne Studio-versjonen har ingen `PlayerModule` i PlayerScripts |
 | 2026-10-26 | Menystil: 1920-talls art deco (gull og svart, solstråler, doble rammer), røde fløyelsgardiner og lydmåler-søyler som kjennetegn. Fargene og fontene ligger i `UiTheme` | Passer operahuset og lyd-temaet. Gjenbrukes i all UI |
