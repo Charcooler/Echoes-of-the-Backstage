@@ -1,0 +1,21 @@
+# Roblox place files (the code lives in src/, build with `rojo build`)
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.rbxl.lock
+
+# Rojo
+sourcemap.json
+
+# Graphify output (rebuild locally)
+graphify-out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Claude settings
+.claude/settings.local.json
