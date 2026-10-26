@@ -12,8 +12,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local UiTheme = require(ReplicatedFirst:WaitForChild("First"):WaitForChild("UiTheme"))
 
--- shortcut: framing fits DemoRoomService's stage; use a tagged camera part once the real map exists.
-local MENU_CAMERA = CFrame.lookAt(Vector3.new(0, 9, -48), Vector3.new(0, 8, -98))
+-- MapService publishes the menu camera (the MenuCamera object in art/map/opera_house.blend); this is the fallback.
+local FALLBACK_CAMERA = CFrame.lookAt(Vector3.new(0, 29, 54), Vector3.new(0, 27, -4))
 local OPEN_TIME = 1.4
 
 local StartScreenController = {}
@@ -152,7 +152,7 @@ function StartScreenController.init()
 	local bars = UiTheme.soundBars(content, UDim2.fromScale(0.5, 0.48), 11)
 	UiTheme.label(content, UiTheme.TAGLINE, UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.5, 0.04), UDim2.fromScale(0.5, 0.55), 28)
 	local button = makeEnterButton(content)
-	local hint = UiTheme.label(content, "WASD  move     C  crouch     Shift  sprint", UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.6, 0.03), UDim2.fromScale(0.5, 0.9), 22)
+	local hint = UiTheme.label(content, "WASD  move     C  crouch     Shift  sprint     E  repair / pick up     F  throw", UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.7, 0.03), UDim2.fromScale(0.5, 0.9), 22)
 	hint.TextTransparency = 0.35
 
 	gui.Parent = player:WaitForChild("PlayerGui")
@@ -165,7 +165,8 @@ function StartScreenController.init()
 	local animation = RunService.RenderStepped:Connect(function()
 		local time = os.clock() - startTime
 		camera.CameraType = Enum.CameraType.Scriptable
-		camera.CFrame = MENU_CAMERA
+		local menuCamera = workspace:GetAttribute("MenuCamera")
+		camera.CFrame = if typeof(menuCamera) == "CFrame" then menuCamera else FALLBACK_CAMERA
 		UiTheme.turnSunburst(rays, time * 1.5)
 		UiTheme.animateSoundBars(bars, time, 14)
 		-- A rare flicker, like a failing stage light.

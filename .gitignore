@@ -19,3 +19,6 @@ Thumbs.db
 
 # Local Claude settings
 .claude/settings.local.json
+
+# Python bytecode from the Blender scripts
+__pycache__/

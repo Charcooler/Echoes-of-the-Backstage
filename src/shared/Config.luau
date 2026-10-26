@@ -34,10 +34,44 @@ local Config = {
 		HUNT_NOISE = 60, -- a heard noise at or above this level starts a Hunt instead of an Investigate
 		CATCH_RANGE = 4, -- studs
 		LINGER_TIME = 3, -- seconds it stands listening where a noise was before patrolling again
-		DEBUG_VISIBLE = true, -- shows the entity's body all the time; set false for the real thing (then it only shows when it catches someone)
+		DEBUG_VISIBLE = false, -- true shows the entity's body all the time (for testing); false = only heard, glimpsed when it catches someone
+		-- Rigged body mesh: made with Roblox's AI mesh generator, rigged in Blender (art/stagehand) and imported
+		-- with Studio's 3D importer. Its bones live in EntityService/StagehandRig. Set to nil for the primitive body.
+		MESH = {
+			MESH_ID = "rbxassetid://74315921560822",
+			TEXTURE_ID = "rbxassetid://137833493602393",
+		} :: { MESH_ID: string, TEXTURE_ID: string }?,
 	},
-	-- CollectionService tag on parts the entity patrols between.
+	-- Rounds and objectives (RoundService, ObjectiveService).
+	ROUND = {
+		REPAIR_TIME = 5, -- seconds a player holds the prompt to fix a fuse box
+		REPAIR_NOISE = 25, -- noise level while someone is repairing (heard within 25 studs; 40 made solo play near impossible)
+		REPAIR_NOISE_INTERVAL = 1.5, -- seconds between repair noises
+		RESULT_TIME = 8, -- seconds the result screen shows before the next round
+	},
+	-- Throwable bottles (ItemService).
+	THROW = {
+		RANGE = 45, -- studs
+		NOISE = 70, -- loud enough to start a Hunt where it shatters
+		COOLDOWN = 1, -- seconds
+	},
+
+	-- Sound effects: free Pro Sound Effects audio from the Creator Store, checked to load in Studio.
+	SOUNDS = {
+		ENTITY_STEPS = "rbxassetid://9114496002", -- slow creaking floorboards, looped while the entity moves
+		ENTITY_BREATH = "rbxassetid://9112863325", -- deep rumbling breath, looped, only heard up close
+		BOTTLE_SHATTER = "rbxassetid://9114591515",
+		REPAIR_LOOP = "rbxassetid://9114237976", -- soft electric arcing while someone repairs
+		FUSE_FIXED = "rbxassetid://9114237705", -- short electric zap
+	},
+
+	-- CollectionService tags the map uses (set in art/map/opera_house.blend, built by MapService).
 	PATROL_POINT_TAG = "EntityPatrolPoint",
+	FUSE_BOX_TAG = "FuseBox",
+	EXIT_DOOR_TAG = "ExitDoor",
+	EXIT_ZONE_TAG = "ExitZone",
+	BOTTLE_SPAWN_TAG = "BottleSpawn",
+	PLAYER_SPAWN_TAG = "PlayerSpawn",
 }
 
 return Config

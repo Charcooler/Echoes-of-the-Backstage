@@ -1,7 +1,14 @@
 --!strict
 -- Builds the entity's body: «The Stagehand», a tall, hunched stagehand with arms that reach the floor,
 -- ropes and a sandbag hanging off it, and a tarnished gramophone horn for a head (sound is all it is).
+-- Uses the rigged AI-generated mesh from Config.ENTITY.MESH when it loads; otherwise builds the body from primitives.
 -- Every part is welded to an anchored Root, so moving Root.CFrame moves the whole body.
+
+local AssetService = game:GetService("AssetService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+local StagehandRig = require(script.Parent.StagehandRig)
 
 local EntityModel = {}
 
@@ -21,6 +28,42 @@ local function lean(degrees: number): CFrame
 	return CFrame.Angles(math.rad(degrees), 0, 0)
 end
 
+local function weldToRoot(root: BasePart, part: BasePart)
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = part
+	weld.Parent = part
+end
+
+-- The mesh is stored as asset ids (plus the bone table in StagehandRig) so the model lives in git.
+-- Returns false, and the caller falls back to primitives, if it cannot load.
+local function addGeneratedMesh(model: Model, root: BasePart): boolean
+	local mesh = Config.ENTITY.MESH
+	if not mesh then
+		return false
+	end
+	local ok, result = pcall(function()
+		return AssetService:CreateMeshPartAsync(Content.fromUri(mesh.MESH_ID))
+	end)
+	if not ok then
+		warn(`[EntityModel] could not load generated mesh, using primitive body: {result}`)
+		return false
+	end
+	local part = result :: MeshPart
+	part.Name = "Body"
+	part.TextureID = mesh.TEXTURE_ID
+	-- Feet on the floor (Y = 0) under Root. The imported rig faces +Z, so turn it to face -Z like Root.
+	part.CFrame = CFrame.new(0, part.Size.Y / 2, 0) * CFrame.Angles(0, math.pi, 0)
+	StagehandRig.addBones(part)
+	weldToRoot(root, part)
+	part.Parent = model
+	model:SetAttribute("Rigged", true) -- EntityAnimationController animates the bones on the clients
+	return true
+end
+
 function EntityModel.build(): (Model, Part)
 	local model = Instance.new("Model")
 	model.Name = "Entity"
@@ -37,6 +80,11 @@ function EntityModel.build(): (Model, Part)
 	root.Parent = model
 	model.PrimaryPart = root
 
+	if addGeneratedMesh(model, root) then
+		return model, root
+	end
+
+	-- Fallback body built from primitives.
 	local function add(name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?)
 		local part = Instance.new("Part")
 		part.Name = name
@@ -45,13 +93,7 @@ function EntityModel.build(): (Model, Part)
 		part.Color = color
 		part.Material = material
 		part.Shape = shape or Enum.PartType.Block
-		part.CanCollide = false
-		part.CanTouch = false
-		part.CanQuery = false
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = root
-		weld.Part1 = part
-		weld.Parent = part
+		weldToRoot(root, part)
 		part.Parent = model
 	end
 
