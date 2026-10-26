@@ -14,8 +14,6 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local NoiseService = require(script.Parent.NoiseService)
 
 local SETTINGS = Config.THROW
--- shortcut: built-in thud that ships with Roblox; swap for a real glass-break sound asset.
-local SHATTER_SOUND = "rbxasset://sounds/action_jump_land.mp3"
 
 local ItemService = {}
 
@@ -72,9 +70,8 @@ end
 
 local function shatter(bottle: Part)
 	local sound = Instance.new("Sound")
-	sound.SoundId = SHATTER_SOUND
+	sound.SoundId = Config.SOUNDS.BOTTLE_SHATTER
 	sound.Volume = 2
-	sound.PlaybackSpeed = 1.6 -- higher pitch reads more like glass
 	sound.RollOffMaxDistance = 120
 	sound.PlayOnRemove = true -- plays at the bottle's position as it is destroyed
 	sound.Parent = bottle

@@ -13,7 +13,6 @@ local NoiseService = require(script.Parent.NoiseService)
 local EntityModel = require(script.EntityModel)
 
 local SETTINGS = Config.ENTITY
-local FOOTSTEP_SOUND = "rbxasset://sounds/action_footsteps_plastic.mp3" -- ships with Roblox, no upload needed
 -- shortcut: fixed height and straight-line movement through props, switch to PathfindingService once the map has walls between rooms or several floors.
 local HEIGHT = EntityModel.ROOT_HEIGHT
 local GLIMPSE_TIME = 1.5 -- seconds the body shows after a catch
@@ -157,11 +156,23 @@ function EntityService.init()
 
 		footsteps = Instance.new("Sound")
 		footsteps.Name = "Footsteps"
-		footsteps.SoundId = FOOTSTEP_SOUND
+		footsteps.SoundId = Config.SOUNDS.ENTITY_STEPS
 		footsteps.Looped = true
+		footsteps.Volume = 1.5
 		footsteps.RollOffMinDistance = 8
 		footsteps.RollOffMaxDistance = 90
 		footsteps.Parent = body
+
+		-- Always breathing, but only audible up close: the warning that it is right next to you.
+		local breath = Instance.new("Sound")
+		breath.Name = "Breath"
+		breath.SoundId = Config.SOUNDS.ENTITY_BREATH
+		breath.Looped = true
+		breath.Volume = 1.2
+		breath.RollOffMinDistance = 4
+		breath.RollOffMaxDistance = 30
+		breath.Parent = body
+		breath:Play()
 
 		local spawnAt = pickPatrolTarget()
 		while not spawnAt do

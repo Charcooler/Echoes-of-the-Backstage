@@ -34,7 +34,7 @@ local Config = {
 		HUNT_NOISE = 60, -- a heard noise at or above this level starts a Hunt instead of an Investigate
 		CATCH_RANGE = 4, -- studs
 		LINGER_TIME = 3, -- seconds it stands listening where a noise was before patrolling again
-		DEBUG_VISIBLE = true, -- shows the entity's body all the time; set false for the real thing (then it only shows when it catches someone)
+		DEBUG_VISIBLE = false, -- true shows the entity's body all the time (for testing); false = only heard, glimpsed when it catches someone
 		-- Rigged body mesh: made with Roblox's AI mesh generator, rigged in Blender (art/stagehand) and imported
 		-- with Studio's 3D importer. Its bones live in EntityService/StagehandRig. Set to nil for the primitive body.
 		MESH = {
@@ -54,6 +54,15 @@ local Config = {
 		RANGE = 45, -- studs
 		NOISE = 70, -- loud enough to start a Hunt where it shatters
 		COOLDOWN = 1, -- seconds
+	},
+
+	-- Sound effects: free Pro Sound Effects audio from the Creator Store, checked to load in Studio.
+	SOUNDS = {
+		ENTITY_STEPS = "rbxassetid://9114496002", -- slow creaking floorboards, looped while the entity moves
+		ENTITY_BREATH = "rbxassetid://9112863325", -- deep rumbling breath, looped, only heard up close
+		BOTTLE_SHATTER = "rbxassetid://9114591515",
+		REPAIR_LOOP = "rbxassetid://9114237976", -- soft electric arcing while someone repairs
+		FUSE_FIXED = "rbxassetid://9114237705", -- short electric zap
 	},
 
 	-- CollectionService tags the map uses (DemoRoomService now, a Studio-built map later).

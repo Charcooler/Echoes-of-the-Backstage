@@ -60,11 +60,33 @@ local function updateProgress()
 	end
 end
 
+local function getSound(box: BasePart, name: string, soundId: string, looped: boolean): Sound
+	local existing = box:FindFirstChild(name)
+	if existing and existing:IsA("Sound") then
+		return existing
+	end
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	sound.SoundId = soundId
+	sound.Looped = looped
+	sound.RollOffMaxDistance = 40
+	sound.Parent = box
+	return sound
+end
+
 local function setup(box: BasePart)
 	local light = box:FindFirstChildOfClass("PointLight") or Instance.new("PointLight")
 	light.Range = 10
 	light.Brightness = 2
 	light.Parent = box
+	local repairSound = getSound(box, "RepairSound", Config.SOUNDS.REPAIR_LOOP, true)
+	local fixedSound = getSound(box, "FixedSound", Config.SOUNDS.FUSE_FIXED, false)
+	repairSound:Stop()
+
+	-- The arcing sound plays while at least one player is working on the box.
+	local function updateRepairSound()
+		repairSound.Playing = next(repairing[box]) ~= nil
+	end
 
 	local prompt = box:FindFirstChildOfClass("ProximityPrompt")
 	if not prompt then
@@ -77,12 +99,15 @@ local function setup(box: BasePart)
 		newPrompt.Parent = box
 		newPrompt.PromptButtonHoldBegan:Connect(function(player)
 			repairing[box][player] = true
+			updateRepairSound()
 		end)
 		newPrompt.PromptButtonHoldEnded:Connect(function(player)
 			repairing[box][player] = nil
+			updateRepairSound()
 		end)
 		newPrompt.Triggered:Connect(function(player)
 			repairing[box][player] = nil
+			updateRepairSound()
 			-- The engine checks the distance too, but the server never trusts the client.
 			if fixed[box] or workspace:GetAttribute("RoundState") ~= "Playing" then
 				return
@@ -93,6 +118,7 @@ local function setup(box: BasePart)
 			fixed[box] = true
 			newPrompt.Enabled = false
 			light.Color = FIXED_COLOR
+			fixedSound:Play()
 			print(`[ObjectiveService] {player.Name} fixed a fuse box`)
 			updateProgress()
 		end)

@@ -39,19 +39,21 @@ function RoundHudController.init()
 		while true do
 			local fixed = workspace:GetAttribute("FusesFixed") or 0
 			local total = workspace:GetAttribute("FusesTotal") or 0
-			objective.Text = if workspace:GetAttribute("ExitOpen")
-				then "The power is back. Escape through the door behind the stage!"
-				else `Repair the fuse boxes   {fixed} / {total}`
-			hint.Text = if player:GetAttribute("HasBottle") then "Bottle in hand: press F to throw it and lure the monster away" else ""
-
 			local outcome = player:GetAttribute("Outcome")
 			local ended = workspace:GetAttribute("RoundState") == "Ended"
-			result.Visible = outcome ~= nil or ended
+			-- Out of the round but others still play: a line on top, so the spectator view stays clear.
+			objective.Text = if outcome == "Escaped"
+				then "You escaped. Watch the others try to make it out."
+				elseif outcome == "Caught" then "It heard you. Watch the others..."
+				elseif workspace:GetAttribute("ExitOpen") then "The power is back. Escape through the door behind the stage!"
+				else `Repair the fuse boxes   {fixed} / {total}`
+			hint.Text = if player:GetAttribute("HasBottle") then "Bottle in hand: press F to throw it and lure the monster away" else ""
+			result.Visible = ended
 			title.Text = if outcome == "Escaped" then "YOU ESCAPED" elseif outcome == "Caught" then "IT HEARD YOU" else "ROUND OVER"
 			local nextRoundAt = workspace:GetAttribute("NextRoundAt")
-			subtitle.Text = if ended and typeof(nextRoundAt) == "number"
+			subtitle.Text = if typeof(nextRoundAt) == "number"
 				then `Next round in {math.max(0, math.ceil(nextRoundAt - workspace:GetServerTimeNow()))}`
-				else "Waiting for the others..."
+				else ""
 			task.wait(0.2)
 		end
 	end)
