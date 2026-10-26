@@ -23,6 +23,7 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 ### Ferdig
 - Prosjektstruktur med Rojo (server / client / shared)
 - Spilldesign lagt inn i `docs/GAME_DESIGN.md`
+- Støy-demo (branch `leon/noise-demo`): `NoiseService`, `MovementNoiseController` og remoten `NoiseEvent`. Testet i Studio: gå = 30, sprint = 80, krype = 0. Ugyldige argumenter og spam blir avvist.
 
 ### Pågår
 - (ingenting ennå)
@@ -31,11 +32,16 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - [ ] Bestemme språk i spilltekst og mål for første spillbare versjon
 - [ ] Fordele eierskap av systemene (se `ARCHITECTURE.md`, planlagte systemer)
 - [ ] Avklare de tekniske spørsmålene under (mikrofon, lyd, Mimicry) før vi bygger på dem
-- [ ] Første system: støy-hendelser (`NoiseService`) og stance-basert bevegelse
+- [ ] Koble `NoiseService` til `EntityService` (signal i stedet for bare print) når fienden bygges
+- [ ] Vurdere om fottrinn bør regnes ut helt på serveren. I dag kan en juksende klient la være å sende `NoiseEvent` og dermed være stille.
 
 ## Beslutninger (nyeste øverst)
 | Dato | Beslutning | Hvorfor |
 |------|-----------|---------|
+| 2026-10-26 | `NoiseEvent` sender bare type og stance. Serveren bestemmer nivå og posisjon | Klienten skal ikke kunne velge hvor eller hvor høyt den lager lyd |
+| 2026-10-26 | Serveren bruker farten den selv ser som minste stance | Hindrer at noen påstår at de kryper mens de løper |
+| 2026-10-26 | Taster: C = krype av/på, hold venstre Shift = sprint | Enkle å teste. Kan byttes senere (f.eks. til Input Action System) |
+| 2026-10-26 | Støyverdier: krype 0, gå 30, sprint 80 (fart 8/16/26) ligger i `Config.STANCES` | Én plass å justere balansen |
 | 2026-10-26 | Spillet er «Echoes of the Backstage» (co-op lydhorror) | Se `docs/GAME_DESIGN.md` |
 | 2026-10-26 | Rojo + GitHub, egne moduler per system | Slik at begge Claude-ene ser hele prosjektet |
 
