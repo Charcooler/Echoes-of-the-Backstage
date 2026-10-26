@@ -10,7 +10,15 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local NoiseService = {}
 
+export type NoiseListener = (player: Player, level: number, position: Vector3) -> ()
+
 local lastEventTime: { [Player]: number } = {}
+local listeners: { NoiseListener } = {}
+
+-- Lets other services (e.g. EntityService) react to noise without NoiseService knowing about them.
+function NoiseService.onNoise(listener: NoiseListener)
+	table.insert(listeners, listener)
+end
 
 -- A client can claim to crouch while running, so the speed the server sees sets a minimum stance.
 local function resolveStance(claimed: string, speed: number): string
@@ -50,11 +58,13 @@ local function onNoiseEvent(player: Player, noiseType: unknown, stance: unknown)
 	local level = Config.STANCES[finalStance].NOISE
 	local pos = root.Position
 
-	-- shortcut: only prints for now, add a signal here when EntityService needs to react to noise.
 	print(
 		`[NoiseService] {player.Name} {noiseType} stance={finalStance} (claimed {stance}) level={level} `
 			.. `pos=({math.round(pos.X)}, {math.round(pos.Y)}, {math.round(pos.Z)}) speed={math.round(speed)}`
 	)
+	for _, listener in listeners do
+		task.spawn(listener, player, level, pos)
+	end
 end
 
 function NoiseService.init()

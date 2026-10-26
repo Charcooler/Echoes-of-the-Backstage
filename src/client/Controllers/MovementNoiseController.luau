@@ -31,6 +31,8 @@ local function getHumanoid(): Humanoid?
 end
 
 local function applyWalkSpeed()
+	-- Local only (client attributes do not replicate); read by NoiseHudController, never by the server.
+	player:SetAttribute("Stance", currentStance())
 	local humanoid = getHumanoid()
 	if humanoid then
 		humanoid.WalkSpeed = Config.STANCES[currentStance()].WALK_SPEED

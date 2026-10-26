@@ -24,6 +24,7 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - Prosjektstruktur med Rojo (server / client / shared)
 - Spilldesign lagt inn i `docs/GAME_DESIGN.md`
 - Støy-demo (branch `leon/noise-demo`): `NoiseService`, `MovementNoiseController` og remoten `NoiseEvent`. Testet i Studio: gå = 30, sprint = 80, krype = 0. Ugyldige argumenter og spam blir avvist.
+- Spillbar mini-demo (branch `leon/entity-demo`): mørkt testrom (`DemoRoomService`), usynlig monster med Patrol, Investigate og Hunt og 3D-fottrinn (`EntityService`), og debug-HUD (`NoiseHudController`). Testet i Studio: sprint → Hunt → spilleren blir tatt.
 
 ### Pågår
 - (ingenting ennå)
@@ -32,12 +33,19 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - [ ] Bestemme språk i spilltekst og mål for første spillbare versjon
 - [ ] Fordele eierskap av systemene (se `ARCHITECTURE.md`, planlagte systemer)
 - [ ] Avklare de tekniske spørsmålene under (mikrofon, lyd, Mimicry) før vi bygger på dem
-- [ ] Koble `NoiseService` til `EntityService` (signal i stedet for bare print) når fienden bygges
+- [ ] Ekte kart bygget i Studio (med `EntityPatrolPoint`-tags) som erstatter `DemoRoomService`
+- [ ] Monsteret går i rett linje gjennom props. Bytt til PathfindingService når kartet har flere rom eller etasjer.
+- [ ] Monsterets posisjon replikeres til klientene, så en juksende klient kan finne det. Vurder å skjule det på serveren.
+- [ ] Skru av `Config.ENTITY.DEBUG_VISIBLE` når vi er ferdige med å teste
 - [ ] Vurdere om fottrinn bør regnes ut helt på serveren. I dag kan en juksende klient la være å sende `NoiseEvent` og dermed være stille.
 
 ## Beslutninger (nyeste øverst)
 | Dato | Beslutning | Hvorfor |
 |------|-----------|---------|
+| 2026-10-26 | Støynivå = hørselsradius i studs for monsteret. Nivå ≥ 60 gir Hunt, lavere gir Investigate | Enkelt å forstå og justere i `Config` |
+| 2026-10-26 | Monsteret løper litt saktere enn sprint (22 mot 26) | Du kan rømme, men sprinten holder det på sporet ditt |
+| 2026-10-26 | Monsterets fottrinn bruker `rbxasset://sounds/action_footsteps_plastic.mp3`, som følger med Roblox | Ingen opplasting eller asset-ID nødvendig. Byttes mot egen lyd senere |
+| 2026-10-26 | Testkartet lages i kode (`DemoRoomService`) | Kommer med i git, så begge får det. `.rbxl` sjekkes ikke inn |
 | 2026-10-26 | `NoiseEvent` sender bare type og stance. Serveren bestemmer nivå og posisjon | Klienten skal ikke kunne velge hvor eller hvor høyt den lager lyd |
 | 2026-10-26 | Serveren bruker farten den selv ser som minste stance | Hindrer at noen påstår at de kryper mens de løper |
 | 2026-10-26 | Taster: C = krype av/på, hold venstre Shift = sprint | Enkle å teste. Kan byttes senere (f.eks. til Input Action System) |
