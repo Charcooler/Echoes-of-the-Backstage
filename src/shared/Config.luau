@@ -42,8 +42,26 @@ local Config = {
 			TEXTURE_ID = "rbxassetid://137833493602393",
 		} :: { MESH_ID: string, TEXTURE_ID: string }?,
 	},
-	-- CollectionService tag on parts the entity patrols between.
+	-- Rounds and objectives (RoundService, ObjectiveService).
+	ROUND = {
+		REPAIR_TIME = 5, -- seconds a player holds the prompt to fix a fuse box
+		REPAIR_NOISE = 25, -- noise level while someone is repairing (heard within 25 studs; 40 made solo play near impossible)
+		REPAIR_NOISE_INTERVAL = 1.5, -- seconds between repair noises
+		RESULT_TIME = 8, -- seconds the result screen shows before the next round
+	},
+	-- Throwable bottles (ItemService).
+	THROW = {
+		RANGE = 45, -- studs
+		NOISE = 70, -- loud enough to start a Hunt where it shatters
+		COOLDOWN = 1, -- seconds
+	},
+
+	-- CollectionService tags the map uses (DemoRoomService now, a Studio-built map later).
 	PATROL_POINT_TAG = "EntityPatrolPoint",
+	FUSE_BOX_TAG = "FuseBox",
+	EXIT_DOOR_TAG = "ExitDoor",
+	EXIT_ZONE_TAG = "ExitZone",
+	BOTTLE_SPAWN_TAG = "BottleSpawn",
 }
 
 return Config

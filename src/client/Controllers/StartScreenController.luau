@@ -152,7 +152,7 @@ function StartScreenController.init()
 	local bars = UiTheme.soundBars(content, UDim2.fromScale(0.5, 0.48), 11)
 	UiTheme.label(content, UiTheme.TAGLINE, UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.5, 0.04), UDim2.fromScale(0.5, 0.55), 28)
 	local button = makeEnterButton(content)
-	local hint = UiTheme.label(content, "WASD  move     C  crouch     Shift  sprint", UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.6, 0.03), UDim2.fromScale(0.5, 0.9), 22)
+	local hint = UiTheme.label(content, "WASD  move     C  crouch     Shift  sprint     E  repair / pick up     F  throw", UiTheme.BODY_FONT, UiTheme.CREAM, UDim2.fromScale(0.7, 0.03), UDim2.fromScale(0.5, 0.9), 22)
 	hint.TextTransparency = 0.35
 
 	gui.Parent = player:WaitForChild("PlayerGui")

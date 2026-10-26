@@ -128,13 +128,23 @@ local function step(dt: number)
 	footsteps.Playing = moving
 end
 
-local function onNoise(_player: Player, level: number, position: Vector3)
+local function onNoise(level: number, position: Vector3, _source: string)
 	if not (model and model.Parent) or level <= 0 or (position - groundPosition).Magnitude > level then
 		return
 	end
 	-- A hunt follows the newest sound instead of calming down to Investigate.
 	local newState: State = if level >= SETTINGS.HUNT_NOISE or state == "Hunt" then "Hunt" else "Investigate"
 	setState(newState, position)
+end
+
+-- New round: back to a random patrol point, calm. Before the body has spawned there is nothing to reset.
+function EntityService.reset()
+	local point = pickPatrolTarget()
+	if model and point then
+		groundPosition = Vector3.new(point.X, HEIGHT, point.Z)
+	end
+	setState("Patrol", nil)
+	lingerUntil = os.clock() + 2
 end
 
 function EntityService.init()

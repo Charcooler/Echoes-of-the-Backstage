@@ -36,13 +36,52 @@ local function addEmergencyLight(parent: Instance, position: Vector3)
 	light.Parent = lamp
 end
 
-local function addPatrolPoint(parent: Instance, position: Vector3)
-	local point = addPart(parent, "PatrolPoint", Vector3.new(1, 1, 1), position, Color3.new(1, 1, 1), Enum.Material.SmoothPlastic)
-	point.Transparency = 1
-	point.CanCollide = false
-	point.CanQuery = false
-	point.CanTouch = false
-	point:AddTag(Config.PATROL_POINT_TAG)
+-- Invisible tagged part that only marks a place or an area for a service.
+local function addMarker(parent: Instance, name: string, size: Vector3, position: Vector3, tag: string)
+	local marker = addPart(parent, name, size, position, Color3.new(1, 1, 1), Enum.Material.SmoothPlastic)
+	marker.Transparency = 1
+	marker.CanCollide = false
+	marker.CanQuery = false
+	marker.CanTouch = false
+	marker:AddTag(tag)
+end
+
+local function addFuseBox(parent: Instance, size: Vector3, position: Vector3)
+	local box = addPart(parent, "FuseBox", size, position, Color3.fromRGB(55, 55, 60), Enum.Material.DiamondPlate)
+	box:AddTag(Config.FUSE_BOX_TAG)
+end
+
+-- Exit door in the back wall of the stage, with a glowing EXIT sign above it and the escape zone behind it.
+local function addExit(parent: Instance, wallColor: Color3)
+	local wallY = WALL_HEIGHT / 2
+	-- The back wall is split around a door gap at X -4..4, Y 3..15 (the stage top is Y = 3).
+	addPart(parent, "WallNorthLeft", Vector3.new(38, WALL_HEIGHT, 2), Vector3.new(-23, wallY, -111), wallColor, Enum.Material.Brick)
+	addPart(parent, "WallNorthRight", Vector3.new(38, WALL_HEIGHT, 2), Vector3.new(23, wallY, -111), wallColor, Enum.Material.Brick)
+	addPart(parent, "WallNorthTop", Vector3.new(8, 7, 2), Vector3.new(0, 18.5, -111), wallColor, Enum.Material.Brick)
+	addPart(parent, "WallNorthBottom", Vector3.new(8, 3, 2), Vector3.new(0, 1.5, -111), wallColor, Enum.Material.Brick)
+
+	local door = addPart(parent, "ExitDoor", Vector3.new(8, 12, 1.6), Vector3.new(0, 9, -111), Color3.fromRGB(60, 35, 25), Enum.Material.Wood)
+	door:AddTag(Config.EXIT_DOOR_TAG)
+	addMarker(parent, "ExitZone", Vector3.new(10, 14, 6), Vector3.new(0, 7, -116), Config.EXIT_ZONE_TAG)
+
+	local sign = addPart(parent, "ExitSign", Vector3.new(4, 1.4, 0.3), Vector3.new(0, 16.5, -109.9), Color3.fromRGB(255, 40, 30), Enum.Material.Neon)
+	sign.CanCollide = false
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Back -- the side facing into the room (+Z)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Text = "EXIT"
+	label.TextScaled = true
+	label.FontFace = Font.fromEnum(Enum.Font.Bodoni)
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Parent = gui
+	gui.Parent = sign
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 80, 60)
+	light.Range = 18
+	light.Brightness = 1.5
+	light.Parent = sign
 end
 
 local function setDarkLighting()
@@ -61,7 +100,7 @@ function DemoRoomService.init()
 	addPart(room, "Floor", Vector3.new(80, 0.2, 120), Vector3.new(0, 0.1, -50), WOOD, Enum.Material.WoodPlanks)
 	local wallColor = Color3.fromRGB(45, 40, 40)
 	local wallY = WALL_HEIGHT / 2
-	addPart(room, "WallNorth", Vector3.new(84, WALL_HEIGHT, 2), Vector3.new(0, wallY, -111), wallColor, Enum.Material.Brick)
+	addExit(room, wallColor)
 	addPart(room, "WallSouth", Vector3.new(84, WALL_HEIGHT, 2), Vector3.new(0, wallY, 11), wallColor, Enum.Material.Brick)
 	addPart(room, "WallWest", Vector3.new(2, WALL_HEIGHT, 120), Vector3.new(-41, wallY, -50), wallColor, Enum.Material.Brick)
 	addPart(room, "WallEast", Vector3.new(2, WALL_HEIGHT, 120), Vector3.new(41, wallY, -50), wallColor, Enum.Material.Brick)
@@ -90,13 +129,23 @@ function DemoRoomService.init()
 		addPart(room, "Crate", Vector3.new(5, 5, 5), position, crateColor, Enum.Material.Wood)
 	end
 
-	for _, position in { Vector3.new(-39, 10, -20), Vector3.new(39, 10, -50), Vector3.new(-39, 10, -80), Vector3.new(0, 15, -109) } do
+	-- A bottle on top of some of the crates.
+	for _, position in { Vector3.new(-25, 5.6, -20), Vector3.new(18, 5.6, -35), Vector3.new(-10, 5.6, -55), Vector3.new(5, 5.6, -75) } do
+		addMarker(room, "BottleSpawn", Vector3.new(1, 1, 1), position, Config.BOTTLE_SPAWN_TAG)
+	end
+
+	-- Three fuse boxes spread out: west wall, east wall and on the stage next to the exit.
+	addFuseBox(room, Vector3.new(0.6, 3, 2), Vector3.new(-39.7, 5, -50))
+	addFuseBox(room, Vector3.new(0.6, 3, 2), Vector3.new(39.7, 5, -25))
+	addFuseBox(room, Vector3.new(2, 3, 0.6), Vector3.new(-26, 7, -109.7))
+
+	for _, position in { Vector3.new(-39, 10, -20), Vector3.new(39, 10, -50), Vector3.new(-39, 10, -80) } do
 		addEmergencyLight(room, position)
 	end
 
 	-- Patrol points stay in the far two thirds so a new player does not spawn next to the entity.
 	for _, position in { Vector3.new(-30, 1, -40), Vector3.new(30, 1, -45), Vector3.new(0, 1, -60), Vector3.new(-25, 1, -85), Vector3.new(25, 1, -82), Vector3.new(0, 1, -30) } do
-		addPatrolPoint(room, position)
+		addMarker(room, "PatrolPoint", Vector3.new(1, 1, 1), position, Config.PATROL_POINT_TAG)
 	end
 
 	room.Parent = workspace
