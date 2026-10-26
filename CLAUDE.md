@@ -5,6 +5,7 @@ Roblox-spill laget av to personer, som begge bruker Claude. Dette er et Rojo-pro
 ## Les først
 1. `PROJECT.md` — spillidé, status, beslutninger, hvem eier hva
 2. `ARCHITECTURE.md` — moduler, remotes og dataflyt
+3. `docs/GAME_DESIGN.md` — full spilldesign for «Echoes of the Backstage»
 
 ## Regler
 - Kode og kommentarer på engelsk. Dokumentasjon (`PROJECT.md`, `ARCHITECTURE.md`) på norsk. Svar brukeren på norsk.

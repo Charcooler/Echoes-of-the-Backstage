@@ -1,4 +1,4 @@
-# Roblox Co-op Game
+# Echoes of the Backstage
 
 Roblox-spill laget av to personer med Rojo og Claude. Se `PROJECT.md` for spillidé og status.
 

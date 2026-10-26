@@ -24,6 +24,22 @@
 |---|---|---|---|
 | `ExampleController` | Eksempel, slett senere | — | — |
 
+## Planlagte systemer (ikke bygget ennå, utledet fra `docs/GAME_DESIGN.md`)
+Forslag til oppdeling. Endres når vi bestemmer oss; flytt raden opp til tabellene over når den bygges.
+
+| Modul | Side | Ansvar |
+|---|---|---|
+| `NoiseService` | server | Tar imot støy-hendelser (gåing, sprint, kast, stemme) og gir dem et lydnivå og en posisjon |
+| `EntityService` | server | Fiendens tilstander: Patrol, Investigate, Hunt, Mimicry. Reagerer på støy fra `NoiseService` |
+| `MovementNoiseController` | klient | Stance (krype/gå/sprint) og hvor mye støy hvert steg lager |
+| `VoiceController` | klient | Måler stemmenivå hvis det lar seg gjøre (se åpne spørsmål i `PROJECT.md`) |
+| `TrapService` | server | Knirkende gulv, props, ventilasjon som gir «støydekke» |
+| `ObjectiveService` | server | Reparere strømnettet og rømme |
+| `ItemService` | server | Gjenstander som kan kastes, walkie-talkie, lydmåler |
+| `AudioController` | klient | 3D-lyd, lydbølger i gulvet, lydmåler-UI |
+
+Planlagt remote: `NoiseEvent` (klient til server: type og styrke; serveren bestemmer posisjon selv).
+
 ## Shared
 | Modul | Ansvar |
 |---|---|
