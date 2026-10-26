@@ -29,6 +29,8 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - Monsterets kropp «The Stagehand» (`EntityModel`), med et glimt av kroppen når den tar noen.
 - AI-generert monstermesh (Roblox' mesh-generator i Studio): høy, utmagret skikkelse i frakk med kobbertrakt som hode. Animasjon etter tilstand: gange, lener seg fremover i Hunt, puster og rykker med hodet når den lytter. Utkastene ligger i `ServerStorage.GeneratedMonsterDrafts` i Leons place-fil (ikke i git).
 - Monsteret er rigget i Blender (`art/stagehand/rig_stagehand.py`) og animeres med skjelett: ekte gange med knær og armsving, foroverbøyd jakt, pust og hoderykk. Testet i Studio.
+- **Operahuset** (erstatter testrommet), bygget i Blender (`art/map/`) og inspirert av Palais Garnier: sal med seterader, balkonger og lysekrone, orkestergrav, scene med ghost light, sidescener med tauverk, gangbroer i flytårnet, korridor, 2 garderober (spawn), kostymerom, rekvisittlager, trap room under scenen, maskinrom med kjeler og en sisterne med vann. Sikringsskap i orkestergraven, på gangbroen og i maskinrommet. Utgang via sceneinngangen. 377 deler, 21 lys.
+- Monsteret bruker PathfindingService og når alle 16 patruljepunktene på alle nivåer (testet). Tilskuermodus, ekte lyder og usynlig monster er lagt inn (testet solo).
 - **Spill-loopen** (branch `leon/game-loop`): runder (`RoundService`), sikringsskap og utgangsdør (`ObjectiveService`), flasker du kaster som avledning (`ItemService`, `ThrowController`, remoten `ThrowEvent`) og runde-HUD med resultatskjerm (`RoundHudController`). Testet i Studio, hele veien: flaske → monsteret jakter dit, 3 skap → døren åpnes → ut → «YOU ESCAPED» → ny runde. Tatt → «IT HEARD YOU» → ny runde. Eksempelmodulene er fjernet.
 
 ### Pågår
@@ -41,8 +43,7 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 - [ ] Bestemme språk i spilltekst
 - [ ] Fordele eierskap av systemene (se `ARCHITECTURE.md`, planlagte systemer)
 - [ ] Avklare de tekniske spørsmålene under (mikrofon, lyd, Mimicry) før vi bygger på dem
-- [ ] Ekte kart bygget i Studio (med taggene `EntityPatrolPoint`, `FuseBox`, `ExitDoor`, `ExitZone`, `BottleSpawn`) som erstatter `DemoRoomService`
-- [ ] Monsteret går i rett linje gjennom props. Bytt til PathfindingService når kartet har flere rom eller etasjer.
+- [ ] Spilltest det nye kartet: balanse (avstander, hvor sikringsskapene står), om noen steder er for mørke, og om noen stier er for trange
 - [ ] Monsterets posisjon replikeres til klientene, så en juksende klient kan finne det. Vurder å skjule det på serveren.
 - [ ] Skru av `Config.ENTITY.DEBUG_VISIBLE` når vi er ferdige med å teste
 - [ ] Vurdere om fottrinn bør regnes ut helt på serveren. I dag kan en juksende klient la være å sende `NoiseEvent` og dermed være stille.
@@ -65,7 +66,8 @@ Regel: man endrer bare andres systemer etter å ha snakket sammen. Delte filer (
 | 2026-10-26 | Støynivå = hørselsradius i studs for monsteret. Nivå ≥ 60 gir Hunt, lavere gir Investigate | Enkelt å forstå og justere i `Config` |
 | 2026-10-26 | Monsteret løper litt saktere enn sprint (22 mot 26) | Du kan rømme, men sprinten holder det på sporet ditt |
 | 2026-10-26 | Monsterets fottrinn bruker `rbxasset://sounds/action_footsteps_plastic.mp3`, som følger med Roblox | Ingen opplasting eller asset-ID nødvendig. Byttes mot egen lyd senere |
-| 2026-10-26 | Testkartet lages i kode (`DemoRoomService`) | Kommer med i git, så begge får det. `.rbxl` sjekkes ikke inn |
+| 2026-10-26 | Kartet lages i Blender som baneredigerer og eksporteres til en generert Luau-tabell (`MapLayout`) som `MapService` bygger fra, i stedet for meshes | Ekte Roblox-deler gir presis kollisjon og stifinning. Alt er tekst i git. Blender gir visuell redigering og testbilder |
+| 2026-10-26 | Monsteret bruker PathfindingService med `AgentCanJump = true` | Kartet har rom, dører og etasjer. Uten «hopp» går ikke stifinningen NED trappetrinn |
 | 2026-10-26 | `NoiseEvent` sender bare type og stance. Serveren bestemmer nivå og posisjon | Klienten skal ikke kunne velge hvor eller hvor høyt den lager lyd |
 | 2026-10-26 | Serveren bruker farten den selv ser som minste stance | Hindrer at noen påstår at de kryper mens de løper |
 | 2026-10-26 | Taster: C = krype av/på, hold venstre Shift = sprint | Enkle å teste. Kan byttes senere (f.eks. til Input Action System) |

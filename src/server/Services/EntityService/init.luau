@@ -4,6 +4,7 @@
 -- Touching it (CATCH_RANGE) kills the player.
 
 local CollectionService = game:GetService("CollectionService")
+local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,9 +14,12 @@ local NoiseService = require(script.Parent.NoiseService)
 local EntityModel = require(script.EntityModel)
 
 local SETTINGS = Config.ENTITY
--- shortcut: fixed height and straight-line movement through props, switch to PathfindingService once the map has walls between rooms or several floors.
-local HEIGHT = EntityModel.ROOT_HEIGHT
+local HEIGHT = EntityModel.ROOT_HEIGHT -- Root sits this high above the entity's feet
 local GLIMPSE_TIME = 1.5 -- seconds the body shows after a catch
+-- 3-stud wide, 9-stud tall walker that can climb the catwalk ladders; doorways in the map are 6 wide.
+-- AgentCanJump is needed: without it the navmesh will not step DOWN stairs (it treats the drop as a jump).
+local AGENT = { AgentRadius = 1.5, AgentHeight = 9, AgentCanJump = true, AgentCanClimb = true }
+-- shortcut: noise is heard through walls and floors (straight-line distance); add occlusion if that feels unfair.
 
 type State = "Patrol" | "Investigate" | "Hunt"
 
@@ -23,12 +27,45 @@ local EntityService = {}
 
 local model: Model
 local body: Part -- the model's anchored Root; moving it moves the whole body
-local groundPosition = Vector3.zero -- where the entity really is; body adds the animation pose on top
+local groundPosition = Vector3.zero -- where Root really is; body adds the animation pose on top
 local facing = Vector3.new(0, 0, -1)
 local footsteps: Sound
 local state: State = "Patrol"
 local target: Vector3? = nil
 local lingerUntil = 0
+local waypoints: { Vector3 } = {} -- Root positions still to walk through, from PathfindingService
+local pathPending = false
+local pathRequest = 0
+
+-- Computes a path in the background. Meanwhile the entity keeps walking its old path, so a hunt that hears a
+-- new footstep every few tenths of a second does not stop and start.
+local function requestPath(goal: Vector3)
+	pathRequest += 1
+	local request = pathRequest
+	pathPending = true
+	task.spawn(function()
+		local path = PathfindingService:CreatePath(AGENT)
+		local ok = pcall(function()
+			path:ComputeAsync(groundPosition - Vector3.new(0, HEIGHT, 0), goal)
+		end)
+		if request ~= pathRequest then
+			return -- a newer goal replaced this one
+		end
+		pathPending = false
+		if ok and path.Status == Enum.PathStatus.Success then
+			local points = {}
+			for _, waypoint in path:GetWaypoints() do
+				table.insert(points, waypoint.Position + Vector3.new(0, HEIGHT, 0))
+			end
+			waypoints = points
+		else
+			-- Unreachable (up a ladder, out in the alley): give up and stand listening.
+			waypoints = {}
+			target = nil
+			lingerUntil = os.clock() + SETTINGS.LINGER_TIME
+		end
+	end)
+end
 
 local function setState(newState: State, newTarget: Vector3?)
 	if newState ~= state then
@@ -37,15 +74,23 @@ local function setState(newState: State, newTarget: Vector3?)
 	state = newState
 	target = newTarget
 	lingerUntil = 0
+	if newTarget then
+		requestPath(newTarget)
+	else
+		pathRequest += 1 -- drop any path still being computed
+		pathPending = false
+		waypoints = {}
+	end
 end
 
+-- A random patrol point, as the floor position under it (the markers stand on the floor).
 local function pickPatrolTarget(): Vector3?
 	local points = CollectionService:GetTagged(Config.PATROL_POINT_TAG)
 	if #points == 0 then
 		return nil
 	end
 	local point = points[math.random(#points)]
-	return if point:IsA("BasePart") then point.Position else nil
+	return if point:IsA("BasePart") then point.Position - Vector3.new(0, point.Size.Y / 2, 0) else nil
 end
 
 local function speedFor(s: State): number
@@ -102,18 +147,25 @@ local function step(dt: number)
 	catchNearbyPlayers()
 
 	local moving = false
-	local goal = target
-	if goal then
-		local offset = Vector3.new(goal.X, HEIGHT, goal.Z) - groundPosition
-		local distance = offset.Magnitude
-		if distance < 0.5 then
+	if target then
+		local nextPoint = waypoints[1]
+		if nextPoint then
+			local offset = nextPoint - groundPosition
+			local distance = offset.Magnitude
+			if distance < 0.3 then
+				table.remove(waypoints, 1)
+			else
+				local flat = Vector3.new(offset.X, 0, offset.Z)
+				if flat.Magnitude > 0.05 then
+					facing = flat.Unit -- turn only around the vertical axis, also on stairs and ladders
+				end
+				groundPosition += offset.Unit * math.min(speedFor(state) * dt, distance)
+				moving = true
+			end
+		elseif not pathPending then
 			-- Arrived: stand still and listen, longer after a noise than between patrol points.
 			target = nil
 			lingerUntil = os.clock() + (if state == "Patrol" then 1 else SETTINGS.LINGER_TIME)
-		else
-			facing = offset.Unit
-			groundPosition += facing * math.min(speedFor(state) * dt, distance)
-			moving = true
 		end
 	elseif os.clock() >= lingerUntil then
 		setState("Patrol", pickPatrolTarget())
@@ -140,7 +192,7 @@ end
 function EntityService.reset()
 	local point = pickPatrolTarget()
 	if model and point then
-		groundPosition = Vector3.new(point.X, HEIGHT, point.Z)
+		groundPosition = point + Vector3.new(0, HEIGHT, 0)
 	end
 	setState("Patrol", nil)
 	lingerUntil = os.clock() + 2
@@ -180,7 +232,7 @@ function EntityService.init()
 			spawnAt = pickPatrolTarget()
 		end
 		-- shortcut: the body's position replicates, so exploiters can see where it is; hide it server-side if that matters.
-		groundPosition = Vector3.new(spawnAt.X, HEIGHT, spawnAt.Z)
+		groundPosition = spawnAt + Vector3.new(0, HEIGHT, 0)
 		model:PivotTo(CFrame.new(groundPosition))
 		model.Parent = workspace
 		RunService.Heartbeat:Connect(step)

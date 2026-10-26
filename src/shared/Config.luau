@@ -65,12 +65,13 @@ local Config = {
 		FUSE_FIXED = "rbxassetid://9114237705", -- short electric zap
 	},
 
-	-- CollectionService tags the map uses (DemoRoomService now, a Studio-built map later).
+	-- CollectionService tags the map uses (set in art/map/opera_house.blend, built by MapService).
 	PATROL_POINT_TAG = "EntityPatrolPoint",
 	FUSE_BOX_TAG = "FuseBox",
 	EXIT_DOOR_TAG = "ExitDoor",
 	EXIT_ZONE_TAG = "ExitZone",
 	BOTTLE_SPAWN_TAG = "BottleSpawn",
+	PLAYER_SPAWN_TAG = "PlayerSpawn",
 }
 
 return Config

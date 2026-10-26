@@ -9,7 +9,7 @@
 | `src/shared/` | `ReplicatedStorage.Shared` | Moduler brukt av både server og klient (`Config`, `Remotes`) |
 | `src/server/` | `ServerScriptService.Server` | `Main.server.luau` + `Services/` (all serverlogikk) |
 | `src/client/` | `StarterPlayer.StarterPlayerScripts.Client` | `Main.client.luau` + `Controllers/` (UI, input, kamera) |
-| `art/` | (ikke synket) | Kildefiler for kunst, f.eks. monsterets mesh og Blender-rigg |
+| `art/` | (ikke synket) | Kildefiler for kunst: `art/map/` (operahuset i Blender + eksport) og `art/stagehand/` (monsterets mesh og rigg) |
 
 ## Slik lastes systemer
 - `Main.server.luau` require-er hver ModuleScript i `Services/` og kaller `init()`.
@@ -26,7 +26,8 @@
 | `EntityService` | Det usynlige monsteret: Patrol (mellom patruljepunkter), Investigate og Hunt. Hører støy innenfor `level` studs, har 3D-fottrinn og dreper spillere innenfor `CATCH_RANGE`. `reset()` setter det tilbake til patruljering ved ny runde. Mimicry er ikke bygget | Leon | `Config`, `NoiseService`, `EntityModel` |
 | `EntityService/EntityModel` | Bygger kroppen til «The Stagehand». Bruker den riggede AI-meshen fra `Config.ENTITY.MESH` (lastet med `AssetService:CreateMeshPartAsync`) og legger på beinene fra `StagehandRig`. Feiler den, brukes en reservekropp bygget av deler. Alt er sveiset til en ankret `Root` | Leon | `Config`, `StagehandRig` |
 | `EntityService/StagehandRig` | Tabell over de 18 beinene i riggen (navn, forelder, CFrame) og `addBones(meshPart)`. Riggen ligger dermed i git som tekst | Leon | — |
-| `DemoRoomService` | Midlertidig kart laget i kode: mørkt rom, scene med utgangsdør og EXIT-skilt, sikringsskap, kasser med flasker, nødlys og patruljepunkter. Erstattes av et ekte kart som bruker de samme taggene | Leon | `Config` |
+| `MapService` | Bygger operahuset fra `MapService/MapLayout` (deler med tagger, lys), lager spawnet fra `PlayerSpawn`-markøren (og slår av andre SpawnLocations), publiserer startskjermkameraet som `workspace`-attributtet `MenuCamera` og setter mørk belysning | Leon | `Config`, `MapLayout` |
+| `MapService/MapLayout` | **Generert** av `art/map/export_map.py` fra `art/map/opera_house.blend`. Skal ikke redigeres for hånd | Leon | — |
 
 ## Controllers (klient)
 | Modul | Ansvar | Eier | Bruker (avhengigheter) |
@@ -35,6 +36,7 @@
 | `ThrowController` | Kaster flasken dit kameraet ser: F, gamepad R2 eller en knapp på skjermen (ContextActionService). Er bare aktiv når spilleren har en flaske | Leon | `Remotes` |
 | `RoundHudController` | Runde-HUD i art deco-stil: mål øverst («Repair the fuse boxes 1 / 3»), hint når du har en flaske, og resultatskjerm (YOU ESCAPED / IT HEARD YOU) med nedtelling | Leon | `UiTheme` |
 | `NoiseHudController` | Debug-HUD nede til venstre: stance og støynivå | Leon | `Config` |
+| `SpectateController` | Tilskuermodus: når du har rømt eller er tatt, følger kameraet en lagkamerat som fortsatt spiller (venstre/høyre, D-pad eller knapper på skjermen) | Leon | `UiTheme` |
 | `EntityAnimationController` | Animerer monsterets skjelett lokalt på hver klient (`Bone.Transform`): gange med knær og armsving, foroverbøyd sprint i Hunt, pust og hoderykk når det står stille | Leon | `Config` |
 | `StartScreenController` | Tittelskjerm: kamera mot scenen, fløyelsgardiner, tittel og ENTER-knapp. Holder karakteren i ro og skjuler Roblox-UI til spilleren trykker ENTER, så åpnes gardinene | Leon | `UiTheme` |
 
@@ -57,7 +59,7 @@ Forslag til oppdeling. Endres når vi bestemmer oss; flytt raden opp til tabelle
 ## Shared
 | Modul | Ansvar |
 |---|---|
-| `Config` | Konstanter og navn begge sider bruker: `STANCES`, støygrenser, `ENTITY` (farter, `HUNT_NOISE`, `CATCH_RANGE`, `LINGER_TIME`, `DEBUG_VISIBLE`, `MESH`), `ROUND` (`REPAIR_TIME`, `REPAIR_NOISE`, `REPAIR_NOISE_INTERVAL`, `RESULT_TIME`), `THROW` (`RANGE`, `NOISE`, `COOLDOWN`) og alle tag-navn |
+| `Config` | Konstanter og navn begge sider bruker: `STANCES`, støygrenser, `ENTITY` (farter, `HUNT_NOISE`, `CATCH_RANGE`, `LINGER_TIME`, `DEBUG_VISIBLE`, `MESH`), `ROUND` (`REPAIR_TIME`, `REPAIR_NOISE`, `REPAIR_NOISE_INTERVAL`, `RESULT_TIME`), `THROW` (`RANGE`, `NOISE`, `COOLDOWN`), `SOUNDS` (lyd-ID-er for monsterets skritt og pust, knust flaske, reparasjon og fikset skap) og alle tag-navn |
 | `Remotes` | Henter/lager RemoteEvents så navn alltid stemmer |
 
 ## RemoteEvents
@@ -90,13 +92,21 @@ Monsteret er modellen `Entity` i `workspace`. `Root` er ankret og flyttes med `C
 **Tags og attributter:**
 | Navn | Type | Satt av | Lest av |
 |---|---|---|---|
-| `EntityPatrolPoint`, `FuseBox`, `ExitDoor`, `ExitZone`, `BottleSpawn` (`Config.*_TAG`) | CollectionService-tagger | `DemoRoomService` (senere: kartet i Studio) | `EntityService`, `ObjectiveService`, `RoundService`, `ItemService` |
+| `EntityPatrolPoint`, `FuseBox`, `ExitDoor`, `ExitZone`, `BottleSpawn`, `PlayerSpawn` (`Config.*_TAG`) | CollectionService-tagger | `MapService` (fra `rbx_tag` i Blender) | `EntityService`, `ObjectiveService`, `RoundService`, `ItemService`, `MapService` |
+| `MenuCamera` | Attributt på `workspace` (CFrame) | `MapService` | `StartScreenController` |
 | `RoundState`, `NextRoundAt` | Attributter på `workspace` | `RoundService` | `RoundHudController` |
 | `FusesFixed`, `FusesTotal`, `ExitOpen` | Attributter på `workspace` | `ObjectiveService` | `RoundService`, `RoundHudController` |
 | `Outcome` (`"Escaped"`/`"Caught"`) | Attributt på spilleren | `RoundService` | `RoundHudController` |
 | `HasBottle` | Attributt på spilleren | `ItemService` | `ThrowController`, `RoundHudController` |
 | `Stance` | Attributt på `LocalPlayer`, bare lokalt | `MovementNoiseController` | `NoiseHudController` (aldri serveren) |
 | `Rigged`, `State`, `Moving` | Attributter på modellen `Entity` | `EntityService`/`EntityModel` | `EntityAnimationController` |
+
+**Kartet (`art/map/`), Blender som baneredigerer:**
+`build_opera_map.py` bygger operahuset i Blender og lagrer `opera_house.blend`. Etter det er `.blend` kilden: rediger i Blender, og kjør `blender opera_house.blend -b --python export_map.py`. Eksporten skriver `src/server/Services/MapService/MapLayout.luau` og testbilder i `art/map/preview/`.
+Konvensjoner i `.blend`: objekter med `rbx = "part"` blir Roblox-deler (`rbx_class`, `rbx_shape`, `rbx_material`, `rbx_collide`, `rbx_transparency`, `rbx_tag`, objektfargen = Roblox-fargen). `rbx = "marker"` er usynlige taggede deler (patruljepunkter, flasker, spawn, utgangssone). `rbx = "light"` blir PointLight/SpotLight, og kameraet `MenuCamera` blir startskjermkameraet. 1 Blender-enhet = 1 stud. Blender Z opp → Roblox Y opp, og alt løftes 20 studs så kjelleren havner over baseplaten.
+Nivåer (Blender Z): sal 0, orkestergrav −4, scene/korridor/rom 4, gangbroer 22, kjeller −14, sisterne −18.
+
+**Monsterets bevegelse:** `EntityService` regner ut stier med `PathfindingService` (agent 3 bred, 9 høy, kan klatre stiger og «hoppe» ned trappetrinn) og går langs waypoints. Mens en ny sti regnes ut, fortsetter monsteret på den gamle. Kan det ikke nå målet, blir det stående og lytte.
 
 **Monsterets kunst og rigg (`art/stagehand/`):**
 `stagehand.gltf` (eksportert fra Studio) → `rig_stagehand.py` i Blender (skjelett, vekter, testbilder i `preview/`) → `stagehand_rigged.glb` → Studio: File → Import 3D. Ved ny rigg må du oppdatere mesh- og tekstur-ID i `Config.ENTITY.MESH` og beintabellen i `StagehandRig` med verdiene fra den importerte modellen.
