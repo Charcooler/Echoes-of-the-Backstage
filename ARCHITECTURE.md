@@ -20,8 +20,8 @@
 |---|---|---|---|
 | `ExampleService` | Eksempel, slett senere | — | — |
 | `NoiseService` | Tar imot støy-hendelser, gir dem lydnivå (fra `Config.STANCES`) og posisjon (fra karakteren på serveren). Skriver til Output og sender videre til lyttere via `NoiseService.onNoise(fn)` | Leon | `Config`, `Remotes` |
-| `EntityService` | Det usynlige monsteret: Patrol (mellom patruljepunkter), Investigate og Hunt. Hører støy innenfor `level` studs, har 3D-fottrinn og en vaggende gange, og dreper spillere innenfor `CATCH_RANGE`. Mimicry er ikke bygget | Leon | `Config`, `NoiseService`, `EntityModel` |
-| `EntityService/EntityModel` | Bygger kroppen til «The Stagehand» av deler: høy, lutende scenearbeider med lange armer, tau og sandsekk, og grammofontrakt som hode. Alle deler er sveiset til en ankret `Root`. `setVisible()` viser eller skjuler kroppen | Leon | — |
+| `EntityService` | Det usynlige monsteret: Patrol (mellom patruljepunkter), Investigate og Hunt. Hører støy innenfor `level` studs, har 3D-fottrinn og animasjon for hele kroppen (vaggende gange, lener seg fremover i Hunt, puster og legger hodet på skakke når den lytter), og dreper spillere innenfor `CATCH_RANGE`. Mimicry er ikke bygget | Leon | `Config`, `NoiseService`, `EntityModel` |
+| `EntityService/EntityModel` | Bygger kroppen til «The Stagehand». Bruker AI-meshen fra `Config.ENTITY.MESH` (lastet med `AssetService:CreateMeshPartAsync`). Feiler den, brukes en reservekropp bygget av deler. Alt er sveiset til en ankret `Root`. `setVisible()` viser eller skjuler kroppen | Leon | `Config` |
 | `DemoRoomService` | Midlertidig testkart laget i kode: mørkt rom, scene, kasser, nødlys og patruljepunkter. Erstattes av et ekte kart | Leon | `Config` |
 
 ## Controllers (klient)

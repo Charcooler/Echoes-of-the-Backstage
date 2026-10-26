@@ -24,7 +24,8 @@ local EntityService = {}
 
 local model: Model
 local body: Part -- the model's anchored Root; moving it moves the whole body
-local groundPosition = Vector3.zero -- where the entity really is; body adds the lurching gait on top
+local groundPosition = Vector3.zero -- where the entity really is; body adds the animation pose on top
+local facing = Vector3.new(0, 0, -1)
 local footsteps: Sound
 local state: State = "Patrol"
 local target: Vector3? = nil
@@ -75,42 +76,54 @@ local function catchNearbyPlayers()
 	end
 end
 
+-- Rotation around the feet instead of the body's center, so leaning tips the top and keeps the feet planted.
+local function aroundFeet(rotation: CFrame): CFrame
+	return CFrame.new(0, -HEIGHT, 0) * rotation * CFrame.new(0, HEIGHT, 0)
+end
+
+-- shortcut: the generated mesh has no rig, so the whole body is animated (gait, lean, breathing, twitches);
+-- rig it (Blender or Studio's auto-rig) for real limb animation.
+local function pose(moving: boolean, speed: number): CFrame
+	local now = os.clock()
+	if moving then
+		local gait = now * speed * 0.6
+		local lean = math.rad(if state == "Hunt" then -16 else -4)
+		return CFrame.new(0, math.abs(math.sin(gait)) * 0.4, 0) * aroundFeet(CFrame.Angles(lean, 0, math.sin(gait) * 0.08))
+	end
+	local breath = math.sin(now * 1.6) * 0.06
+	-- Now and then it snaps its head to one side and holds it, as if listening for you.
+	local twitch = if math.noise(now * 0.7, 3.1) > 0.3 then math.rad(12) else 0
+	return CFrame.new(0, breath, 0) * aroundFeet(CFrame.Angles(math.rad(-6), twitch, twitch * 0.5))
+end
+
 local function step(dt: number)
 	catchNearbyPlayers()
 
+	local moving = false
 	local goal = target
-	if not goal then
-		footsteps.Playing = false
-		if os.clock() < lingerUntil then
-			return
+	if goal then
+		local offset = Vector3.new(goal.X, HEIGHT, goal.Z) - groundPosition
+		local distance = offset.Magnitude
+		if distance < 0.5 then
+			-- Arrived: stand still and listen, longer after a noise than between patrol points.
+			target = nil
+			lingerUntil = os.clock() + (if state == "Patrol" then 1 else SETTINGS.LINGER_TIME)
+		else
+			facing = offset.Unit
+			groundPosition += facing * math.min(speedFor(state) * dt, distance)
+			moving = true
 		end
+	elseif os.clock() >= lingerUntil then
 		setState("Patrol", pickPatrolTarget())
-		return
 	end
 
-	local offset = Vector3.new(goal.X, HEIGHT, goal.Z) - groundPosition
-	local distance = offset.Magnitude
-	if distance < 0.5 then
-		-- Arrived: stand still and listen, longer after a noise than between patrol points.
-		target = nil
-		lingerUntil = os.clock() + (if state == "Patrol" then 1 else SETTINGS.LINGER_TIME)
-		return
-	end
-
-	local direction = offset.Unit
-	local speed = speedFor(state)
-	groundPosition += direction * math.min(speed * dt, distance)
-	-- Lurching gait: bob and sway in step with the speed, on top of the smooth ground path.
-	local gait = os.clock() * speed * 0.6
-	body.CFrame = CFrame.lookAt(groundPosition, groundPosition + direction)
-		* CFrame.new(0, math.abs(math.sin(gait)) * 0.4, 0)
-		* CFrame.Angles(0, 0, math.sin(gait) * 0.08)
+	body.CFrame = CFrame.lookAt(groundPosition, groundPosition + facing) * pose(moving, speedFor(state))
 	footsteps.PlaybackSpeed = if state == "Hunt" then 1.3 elseif state == "Investigate" then 1 else 0.7
-	footsteps.Playing = true
+	footsteps.Playing = moving
 end
 
 local function onNoise(_player: Player, level: number, position: Vector3)
-	if not model.Parent or level <= 0 or (position - groundPosition).Magnitude > level then
+	if not (model and model.Parent) or level <= 0 or (position - groundPosition).Magnitude > level then
 		return
 	end
 	-- A hunt follows the newest sound instead of calming down to Investigate.
@@ -119,21 +132,21 @@ local function onNoise(_player: Player, level: number, position: Vector3)
 end
 
 function EntityService.init()
-	model, body = EntityModel.build()
-	EntityModel.setVisible(model, SETTINGS.DEBUG_VISIBLE)
-
-	footsteps = Instance.new("Sound")
-	footsteps.Name = "Footsteps"
-	footsteps.SoundId = FOOTSTEP_SOUND
-	footsteps.Looped = true
-	footsteps.RollOffMinDistance = 8
-	footsteps.RollOffMaxDistance = 90
-	footsteps.Parent = body
-
 	NoiseService.onNoise(onNoise)
 
-	-- The map may be built by another service after this one, so wait for patrol points before spawning.
+	-- Spawned because loading the mesh yields, and the map may be built by another service after this one.
 	task.spawn(function()
+		model, body = EntityModel.build()
+		EntityModel.setVisible(model, SETTINGS.DEBUG_VISIBLE)
+
+		footsteps = Instance.new("Sound")
+		footsteps.Name = "Footsteps"
+		footsteps.SoundId = FOOTSTEP_SOUND
+		footsteps.Looped = true
+		footsteps.RollOffMinDistance = 8
+		footsteps.RollOffMaxDistance = 90
+		footsteps.Parent = body
+
 		local spawnAt = pickPatrolTarget()
 		while not spawnAt do
 			task.wait(0.5)
