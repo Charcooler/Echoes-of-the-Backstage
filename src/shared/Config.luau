@@ -34,7 +34,7 @@ local Config = {
 		HUNT_NOISE = 60, -- a heard noise at or above this level starts a Hunt instead of an Investigate
 		CATCH_RANGE = 4, -- studs
 		LINGER_TIME = 3, -- seconds it stands listening where a noise was before patrolling again
-		DEBUG_VISIBLE = true, -- shows the entity as a faint red shape; set false for the real thing
+		DEBUG_VISIBLE = true, -- shows the entity's body all the time; set false for the real thing (then it only shows when it catches someone)
 	},
 	-- CollectionService tag on parts the entity patrols between.
 	PATROL_POINT_TAG = "EntityPatrolPoint",

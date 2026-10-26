@@ -72,6 +72,18 @@ function DemoRoomService.init()
 	addPart(room, "CurtainLeft", Vector3.new(14, 18, 1), Vector3.new(-23, 12, -88), velvet, Enum.Material.Fabric)
 	addPart(room, "CurtainRight", Vector3.new(14, 18, 1), Vector3.new(23, 12, -88), velvet, Enum.Material.Fabric)
 
+	-- Warm stage spotlight, also what the start screen camera looks at.
+	local spotLamp = addPart(room, "StageSpotlight", Vector3.new(1, 1, 1), Vector3.new(0, 20, -94), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	spotLamp.Transparency = 1
+	spotLamp.CanCollide = false
+	local spotlight = Instance.new("SpotLight")
+	spotlight.Face = Enum.NormalId.Bottom
+	spotlight.Angle = 50
+	spotlight.Range = 30
+	spotlight.Brightness = 3
+	spotlight.Color = Color3.fromRGB(255, 214, 160)
+	spotlight.Parent = spotLamp
+
 	-- Prop crates to hide behind.
 	local crateColor = Color3.fromRGB(100, 75, 45)
 	for _, position in { Vector3.new(-25, 2.5, -20), Vector3.new(18, 2.5, -35), Vector3.new(-10, 2.5, -55), Vector3.new(28, 2.5, -65), Vector3.new(-30, 2.5, -70), Vector3.new(5, 2.5, -75) } do

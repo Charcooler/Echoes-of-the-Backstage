@@ -1,6 +1,7 @@
 --!strict
 -- The invisible entity. Patrols between tagged points, investigates noise it hears and hunts loud noise.
--- Players only notice it through its 3D footsteps. Touching it (CATCH_RANGE) kills the player.
+-- Players only notice it through its 3D footsteps, and glimpse its body (EntityModel) when it catches them.
+-- Touching it (CATCH_RANGE) kills the player.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -9,17 +10,21 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local NoiseService = require(script.Parent.NoiseService)
+local EntityModel = require(script.EntityModel)
 
 local SETTINGS = Config.ENTITY
 local FOOTSTEP_SOUND = "rbxasset://sounds/action_footsteps_plastic.mp3" -- ships with Roblox, no upload needed
 -- shortcut: fixed height and straight-line movement through props, switch to PathfindingService once the map has walls between rooms or several floors.
-local HEIGHT = 3
+local HEIGHT = EntityModel.ROOT_HEIGHT
+local GLIMPSE_TIME = 1.5 -- seconds the body shows after a catch
 
 type State = "Patrol" | "Investigate" | "Hunt"
 
 local EntityService = {}
 
-local body: Part
+local model: Model
+local body: Part -- the model's anchored Root; moving it moves the whole body
+local groundPosition = Vector3.zero -- where the entity really is; body adds the lurching gait on top
 local footsteps: Sound
 local state: State = "Patrol"
 local target: Vector3? = nil
@@ -59,6 +64,10 @@ local function catchNearbyPlayers()
 			if (root.Position - body.Position).Magnitude <= SETTINGS.CATCH_RANGE then
 				print(`[EntityService] caught {player.Name}`)
 				humanoid.Health = 0
+				if not SETTINGS.DEBUG_VISIBLE then
+					EntityModel.setVisible(model, true)
+					task.delay(GLIMPSE_TIME, EntityModel.setVisible, model, false)
+				end
 				setState("Patrol", nil)
 				lingerUntil = os.clock() + SETTINGS.LINGER_TIME
 			end
@@ -79,7 +88,7 @@ local function step(dt: number)
 		return
 	end
 
-	local offset = Vector3.new(goal.X, HEIGHT, goal.Z) - body.Position
+	local offset = Vector3.new(goal.X, HEIGHT, goal.Z) - groundPosition
 	local distance = offset.Magnitude
 	if distance < 0.5 then
 		-- Arrived: stand still and listen, longer after a noise than between patrol points.
@@ -89,14 +98,19 @@ local function step(dt: number)
 	end
 
 	local direction = offset.Unit
-	local position = body.Position + direction * math.min(speedFor(state) * dt, distance)
-	body.CFrame = CFrame.lookAt(position, position + direction)
+	local speed = speedFor(state)
+	groundPosition += direction * math.min(speed * dt, distance)
+	-- Lurching gait: bob and sway in step with the speed, on top of the smooth ground path.
+	local gait = os.clock() * speed * 0.6
+	body.CFrame = CFrame.lookAt(groundPosition, groundPosition + direction)
+		* CFrame.new(0, math.abs(math.sin(gait)) * 0.4, 0)
+		* CFrame.Angles(0, 0, math.sin(gait) * 0.08)
 	footsteps.PlaybackSpeed = if state == "Hunt" then 1.3 elseif state == "Investigate" then 1 else 0.7
 	footsteps.Playing = true
 end
 
 local function onNoise(_player: Player, level: number, position: Vector3)
-	if not body.Parent or level <= 0 or (position - body.Position).Magnitude > level then
+	if not model.Parent or level <= 0 or (position - groundPosition).Magnitude > level then
 		return
 	end
 	-- A hunt follows the newest sound instead of calming down to Investigate.
@@ -104,17 +118,9 @@ local function onNoise(_player: Player, level: number, position: Vector3)
 	setState(newState, position)
 end
 
-local function createBody(): Part
-	local part = Instance.new("Part")
-	part.Name = "Entity"
-	part.Size = Vector3.new(3, 6, 2)
-	part.Color = Color3.fromRGB(255, 40, 40)
-	part.Transparency = if SETTINGS.DEBUG_VISIBLE then 0.75 else 1
-	part.Anchored = true
-	part.CanCollide = false
-	part.CanTouch = false
-	part.CanQuery = false
-	part.CastShadow = false
+function EntityService.init()
+	model, body = EntityModel.build()
+	EntityModel.setVisible(model, SETTINGS.DEBUG_VISIBLE)
 
 	footsteps = Instance.new("Sound")
 	footsteps.Name = "Footsteps"
@@ -122,12 +128,8 @@ local function createBody(): Part
 	footsteps.Looped = true
 	footsteps.RollOffMinDistance = 8
 	footsteps.RollOffMaxDistance = 90
-	footsteps.Parent = part
-	return part
-end
+	footsteps.Parent = body
 
-function EntityService.init()
-	body = createBody()
 	NoiseService.onNoise(onNoise)
 
 	-- The map may be built by another service after this one, so wait for patrol points before spawning.
@@ -137,9 +139,10 @@ function EntityService.init()
 			task.wait(0.5)
 			spawnAt = pickPatrolTarget()
 		end
-		-- shortcut: the part's position replicates, so exploiters can see where it is; hide it server-side if that matters.
-		body.Position = Vector3.new(spawnAt.X, HEIGHT, spawnAt.Z)
-		body.Parent = workspace
+		-- shortcut: the body's position replicates, so exploiters can see where it is; hide it server-side if that matters.
+		groundPosition = Vector3.new(spawnAt.X, HEIGHT, spawnAt.Z)
+		model:PivotTo(CFrame.new(groundPosition))
+		model.Parent = workspace
 		RunService.Heartbeat:Connect(step)
 	end)
 end
